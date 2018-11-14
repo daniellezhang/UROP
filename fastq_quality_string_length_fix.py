@@ -27,9 +27,9 @@ for read in input_seq_iterator:
    seq_len = len(read.seq)
    #replace the quality string length by the actual sequence length
    description = description[0:i]+"ch="+str(seq_len)+description[j:]
-   #
-   output[len(output) -1].description
+
+   output[len(output) -1].description = description
 
 
-#create new fastq file with the correct quality string length
+#create new fastq with the correct quality string length
 SeqIO.write(output,"output.fastq", "fastq")
