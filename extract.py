@@ -9,19 +9,20 @@ import sys
 from Bio import SeqIO
 
 #check if the arguments are valid
-assert len(sys.argv) < 3, "need to include a reference genome file \
-and at least one transcript ID"
+assert len(sys.argv) >= 3, "need to include a reference genome file \
+and at least one ID"
 
 #list of transcript IDs
-id = sys.argv[2:len(sys.argv)]
+ids = sys.argv[2:len(sys.argv)]
 
 openfile = str(sys.argv[1])
 iterator = SeqIO.parse(openfile, "fasta")
 output = []
 
 for record in iterator:
-    if record.id in id:
-        output.append(record)
+   # if record.id in ids:
+        #output.append(record)
+        print(record.description,end="\n")
 
 
-SeqIO.write(output,"extract.fastq","fastq")
+#SeqIO.write(output,"extract.fastq","fastq")
