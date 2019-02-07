@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#created on 06/02/19
+#written by Danielle Zhang
+#Bash script to extract primary and secondary alignment's reads from given SAM file
+
 #check if argument number is valid
 if [[ $# -ne 1 ]]; then
 	echo "Need to include a SAM file"
