@@ -23,15 +23,14 @@ try:
     id_dict = {}
     f = open('./primary.txt','r')
     for id in f:
-        if not dict.get(id):
+        if not id_dict.get(id):
             id_dict[id] = 0
         else:
             id_dict[id] += 1
     f.close()
     
     #count the number of occurence of secondary alignments' id
-    f = open('.secondary.txt','r')
-    id = f.readline()
+    f = open('./secondary.txt','r')
     for id in f:
         if not id_dict.get(id):
             id_dict[id] = 0
