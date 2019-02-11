@@ -55,10 +55,10 @@ def main():
     command +=format("' %s >./problematic_line_removed.fastq"%openfile)
 
     call(command,shell = True)
-    #check()
+    #check(prob_seq)
 
 #function to check if all problematic lines have been removed
-def check():
+def check(prob_seq):
     f = open("./problematic_line_removed.fastq",'r')
     header = f.readline()
     seq = f.readline()
