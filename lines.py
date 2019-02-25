@@ -8,19 +8,13 @@ import sys
 from subprocess import call
 
 
-def main():
-    #check if the arguments are valid
-    assert len(sys.argv) >= 3, "need to include file to be open and the sequence id \
-    to be checked"
+def remove(prob_seq, filename):
 
-    #read lists of problematic seq id from the command line
-    prob_seq = sys.argv[2:]
-
-    n_neighbour_lines = 12
+    n_neighbour_lines = 8
     line_list = []
     total_line = 0
-    openfile = sys.argv[1]
-    f = open(openfile,'r')
+
+    f = open(filename,'r')
 
     header = f.readline()
     seq = f.readline()
@@ -74,4 +68,15 @@ def check(prob_seq):
         quality_string = f.readline()
     f.close()
 
-main()
+def main():
+    #check if the arguments are valid
+    assert len(sys.argv) >= 3, "need to include file to be open and the sequence id \
+    to be checked"
+
+    #read lists of problematic seq id from the command line
+    prob_seq = sys.argv[2:]
+    filename = sys.argv[1]
+    remove(prob_seq, filename)
+
+if __name__ == "__main__":
+    main()
