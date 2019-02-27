@@ -50,6 +50,7 @@ def main():
     assert len(sys.argv) == 2, "need to include a SAM file to be open"
     assert sys.argv[1].split('.')[-1]=='sam', "Input file need to be SAM format"
     sam_file = sys.argv[1]
+    remove_duplicate(sam_file)
 
 
 if __name__ == "__main__":
