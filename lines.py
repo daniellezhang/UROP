@@ -46,7 +46,7 @@ def remove(prob_seq, filename):
 
     if current_line < total_line:
         command += format("NR==%d,NR==%d;"%(current_line,total_line))
-    command +=format("' %s >./problematic_line_removed.fastq"%openfile)
+    command +=format("' %s >./problematic_line_removed.fastq"%filename)
 
     call(command,shell = True)
     #check(prob_seq)
