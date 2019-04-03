@@ -7,8 +7,8 @@ Remove duplicate headers in SAM file
 """
 
 import sys
-import pysam
 import csv
+import pysam
 
 
 
@@ -18,6 +18,7 @@ def remove_duplicate(sam_file):
     header_lst = []
     names = []
     lengths = []
+    header = {}
 
     #create a list of unique headers
     for row in reader:
@@ -28,16 +29,24 @@ def remove_duplicate(sam_file):
 
     f.close()
 
+
+    #create a multi-level dictionary for header
     #extract name and length from header
     for h in header_lst:
-        names.append(h.split('\t')[1][3:])
-        lengths.append(int(h.split('\t')[2][3:]))
+        type = h.split('\t')[0][1:]
+        if header.get(type,-1) == -1:
+            header[type] = []
+        line = {}
+        line[h.split('\t')[1][:2]] = h.split('\t')[1][3:]
+        length = h.split('\t')[2].split(':')
+        line[h.split('\t')[2].split(':')[0]] = int(h.split('\t')[2].split(':')[1])
+        if line not in header[type]:
+            header[type].append(line)
+            print(line)
 
-    #create AlignmentHeader file
-    header = pysam.AlignmentHeader.from_references(reference_lengths = lengths,reference_names = names)
     #create outfile with no duplicate header
     outfile = pysam.AlignmentFile("duplicates_removed.sam","w", header = header)
-    samfile = pysam.AlignmentFile(sys.argv[1],"r")
+    samfile = pysam.AlignmentFile(sam_file,"r")
     #add alignments to outfile
     for read in samfile.fetch():
         outfile.write(read)
