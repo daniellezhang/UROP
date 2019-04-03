@@ -42,7 +42,6 @@ def remove_duplicate(sam_file):
         line[h.split('\t')[2].split(':')[0]] = int(h.split('\t')[2].split(':')[1])
         if line not in header[type]:
             header[type].append(line)
-            print(line)
 
     #create outfile with no duplicate header
     outfile = pysam.AlignmentFile("duplicates_removed.sam","w", header = header)
