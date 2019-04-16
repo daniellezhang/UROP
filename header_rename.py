@@ -40,7 +40,7 @@ def main():
     assert len(sys.argv) == 2, "Need to include fastq file to be renamed in the arguments"
     assert sys.argv[1].split('.')[-1]=='fastq', "Input file need to be fastq format"
 
-    filename = sys.arv[1]
+    filename = sys.argv[1]
     rename(filename)
 
 
