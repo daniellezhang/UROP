@@ -18,7 +18,7 @@ def uniquely_mapped(sam_file):
         #the number of their occurence
         id_dict = {}
         f = open('./primary.txt','r')
-        for id in f.readline():
+        for id in f.readlines():
             if not id_dict.get(id):
                 id_dict[id] = 1
             else:
@@ -27,7 +27,7 @@ def uniquely_mapped(sam_file):
 
         #count the number of occurence of secondary alignments' id
         f = open('./secondary.txt','r')
-        for id in f.readline():
+        for id in f.readlines():
             if not id_dict.get(id):
                 id_dict[id] = 1
             else:
@@ -50,10 +50,10 @@ def uniquely_mapped(sam_file):
 def main():
         #check if the arguments are valid
         assert len(sys.argv) == 2, "need to include a SAM file to be open"
-        assert sys.argv[1].split('.')[-1]=='sam', "Input file need to be SAM format"
 
         sam_file = sys.argv[1]
         uniquely_mapped(sam_file)
+
 
 
 if __name__ == "__main__":
