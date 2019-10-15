@@ -24,9 +24,10 @@ position in reference sequence"""
 def process_CIGAR(CIGAR_str, ref_start):
     prev = 0
     current_query = 1
-    current_ref = ref_start
     query_lst = []
     ref_lst = []
+    ref_start = int(ref_start)
+    current_ref = ref_start
     #read CIGAR string by character
     for i in range(len(CIGAR_str)):
         #find a CIGAR operation
@@ -51,37 +52,44 @@ def process_CIGAR(CIGAR_str, ref_start):
 
 """take two aligned bases lists to calculate concordance stats
 assume the reads mapped to the same reference segments"""
-def concordance_stat(aligned1, aligned2, query_length):
+def concordance_stat(aligned1, aligned2, query_length, same_ref):
     aligned_by_both = 0
     aligned_1= 0
     aligned_2 = 0
     aligned_different_pos = 0
     seq_start = min(aligned1.query_lst[0][0],aligned2.query_lst[0][0])
     seq_end = max(aligned1.query_lst[-1][1],aligned2.query_lst[-1][1])
-    current_seq1 = aligned1.query_lst[0]
-    current_seq2 = aligned2.query_lst[0]
-    current_ref1 = aligned1.ref_lst[0]
-    current_ref2 = aligned2.ref_lst[0]
+
     i = seq_start
     j = 0
     k = 0
+    #unaligned bases at the start = seq_start-1
+    #unaligned bases at the end = query_length-(seq_end-1)
     unaligned_by_both = seq_start + query_length - seq_end
 
     #check the overlap aligned bases base by base
-    while i < seq_end and j < len(aligned1.query_lst) and k < len(aligned2.query_lst):
+    while i < seq_end:
         #print(i,j,k)
-        current_seq1 = aligned1.query_lst[j]
-        current_seq2 = aligned2.query_lst[k]
-        current_ref1 = aligned1.ref_lst[j]
-        current_ref2 = aligned2.ref_lst[k]
         is_mapped1 = 0
         is_mapped2 = 0
+
+        if j < len(aligned1.query_lst):
+            current_seq1 = aligned1.query_lst[j]
+            current_ref1 = aligned1.ref_lst[j]
+        elif j == len(aligned1.query_lst):
+            current_seq1 = (-1,-1)
+
+        if k < len(aligned2.query_lst):
+            current_seq2 = aligned2.query_lst[k]
+            current_ref2 = aligned2.ref_lst[k]
+        elif k == len(aligned2.query_lst):
+            current_seq2 = (-1,-1)
         #base is mapped by both aligners
         if i == current_seq1[0] and i == current_seq2[0]:
             is_mapped1 = 1
             is_mapped2 = 1
             #base is mapped to the same position by both aligners
-            if current_ref1[0] == current_ref2[0]:
+            if current_ref1[0] == current_ref2[0] and same_ref == 1:
                 aligned_by_both += 1
             #base is mapped to different position by both aligners
             else:
@@ -115,53 +123,29 @@ def concordance_stat(aligned1, aligned2, query_length):
 
         i += 1
 
-    #one alignment has ended. continue calculate concordance stat
-    #by base for the remainig alignment
-    if j >= len(aligned1.query_lst):
-        is_mapped1 = 0
-        while  i < seq_end:
-            #print(i,j,k)
-            current_seq2 = aligned2.query_lst[k]
-            current_ref2 = aligned2.ref_lst[k]
-            is_mapped2 = 0
-            if i == current_seq2[0]:
-                is_mapped2 = 1
-                aligned_2 += 1
-
-            if is_mapped2 == 1:
-                if i+1 == current_seq2[1]:
-                    k += 1
-                else:
-                    aligned2.query_lst[k] = (i+1, current_seq2[1])
-                    aligned2.ref_lst[k] = (current_ref2[0]+1, current_ref2[1])
-            else:
-                unaligned_by_both += 1
-            i += 1
-    else:
-        is_mapped2 = 0
-        while  i < seq_end:
-            #print(i,j,k)
-            current_seq1 = aligned1.query_lst[j]
-            current_ref1 = aligned1.ref_lst[j]
-            is_mapped1 = 0
-            if i == current_seq1[0]:
-                is_mapped1 = 1
-                aligned_1 += 1
-
-            if is_mapped1 == 1:
-                if i+1 == current_seq1[1]:
-                    j += 1
-                else:
-                    aligned1.query_lst[j] = (i+1, current_seq1[1])
-                    aligned1.ref_lst[j] = (current_ref1[0]+1, current_ref1[1])
-            else:
-                unaligned_by_both += 1
-            i += 1
-
-
 
 
     return (unaligned_by_both,aligned_by_both, aligned_different_pos, aligned_1, aligned_2)
+
+#count the number of aligned bases
+def aligned_base_count(CIGAR_str):
+    aligned_count = 0
+    prev = 0
+    for i in range(len(CIGAR_str)):
+        #find a CIGAR operation
+        if CIGAR_str[i].isalpha() or CIGAR_str[i] == '=':
+            # number of bases for this CIGAR operation
+            n = int(CIGAR_str[prev:i])
+            op = CIGAR_str[i]
+            #a match. add the segment of query and segment of ref to the lists
+            if op == 'M' or op == '=':
+                aligned_count += n
+            prev = i+1
+    return aligned_count
+
+
+
+
 
 #driver function for running the concordance analysis
 def concordance_driver():
@@ -169,34 +153,49 @@ def concordance_driver():
     mapping_info = sys.argv[1]
 
     '''read the mapping information from the given csv file
-    headers: row, qname, qlength, ref1, ref_start1, CIGAR1, ref2, ref_start2, CIGAR2 '''
+    headers: row, qname, qlength, aligner1, ref1, ref_start1, CIGAR1, aligner2, ref2, ref_start2, CIGAR2 '''
     f1 = open(mapping_info, 'r')
 
     '''output a csv file of concordance stat, one query per line'''
     f2 = open("concordance_stat.csv", 'w+')
-    f2.write("qname, same_ref, unaligned_both, aligned_by_both, aligned_different_pos, aligned_1, aligned_2\n")
+    f2.write("qname, qlength, unaligned_both, aligned_by_both, aligned_different_pos, aligned_1, aligned_2\n")
     for line in f1.readlines()[1:]:
         query = line[:-1].split(',')
         qname = query[1][1:-1]
         qlength = int(query[2])
-        ref1 = query[3][1:-1]
-        ref_start1 = int(query[4])
-        CIGAR1 = query[5][1:-1]
-        ref2 = query[6][1:-1]
-        ref_start2 = int(query[7])
-        CIGAR2 = query[8][1:-1]
+        aligner1 = int(query[3])
+        ref1 = query[4][1:-1]
+        ref_start1 = query[5]
+        CIGAR1 = query[6][1:-1]
+        aligner2 = int(query[7])
+        ref2 = query[8][1:-1]
+        ref_start2 = query[9]
+        CIGAR2 = query[10][1:-1]
         same_ref = 0
-        #read is mapped to the same reference chromosome. calculate concordance stat
-        if ref1 == ref2:
+        #read is mapped by both aligners
+        if aligner1 == 1 and aligner2 == 1:
+            ref_start1 = int(ref_start1)
+            ref_start2 = int(ref_start2)
             alignment1 = process_CIGAR(CIGAR1, ref_start1)
             alignment2 = process_CIGAR(CIGAR2, ref_start2)
-            stat = concordance_stat(alignment1, alignment2, qlength)
-            same_ref = 1
+            #read is mapped to the same reference
+            if ref1 == ref2:
+                same_ref = 1
+            stat = concordance_stat(alignment1, alignment2, qlength, same_ref)
             str_line = str(stat)[1:-1]
-            line = format("%s,%d,%s\n"%(qname, same_ref, str_line))
-        #read is mapped to different chromosome
+            line = format("%s,%d,%s\n"%(qname, qlength, str_line))
+        #read is mapped by only one aligner
+        elif aligner1 == 1:
+            aligned_base = aligned_base_count(CIGAR1)
+            unaligned_both = qlength - aligned_base
+            line = format("%s,%d,%d,%d,%d,%d,%d\n"%(qname, qlength, unaligned_both,0,0,aligned_base,0))
+        elif aligner2 == 1:
+            aligned_base = aligned_base_count(CIGAR2)
+            unaligned_both = qlength - aligned_base
+            line = format("%s,%d,%d,%d,%d,%d,%d\n"%(qname, qlength, unaligned_both,0,0,0,aligned_base))
+        #read is unaligned by both aligners
         else:
-            line = format("%s,0,0,0,0,0,0\n"%qname)
+            line = format("%s,%d,%d,0,0,0,0\n"%(qname,qlength, qlength))
         f2.write(line)
 
 
